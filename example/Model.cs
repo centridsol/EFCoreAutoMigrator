@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-//From TODO: 
-namespace EFCoreMigratorExample
+
+namespace EFCoreAutoMigratorExample
 {
+    // From https://docs.microsoft.com/en-us/ef/core/get-started
     public class BloggingContext : DbContext
     {
         public DbSet<Blog> Blogs { get; set; }

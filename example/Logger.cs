@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 
-namespace EFCoreMigratorExample{
+namespace EFCoreAutoMigratorExample{
     class Logger : ILogger
     {
         public IDisposable BeginScope<TState>(TState state)

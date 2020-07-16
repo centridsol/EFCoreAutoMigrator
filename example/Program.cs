@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using CentridNet.EFCoreAutoMigrator;
 using Microsoft.EntityFrameworkCore;
 
-namespace EFCoreMigratorExample
+namespace EFCoreAutoMigratorExample
 {
     class Program
     {
