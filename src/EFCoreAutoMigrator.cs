@@ -23,6 +23,7 @@ namespace CentridNet.EFCoreAutoMigrator
         private DBMigratorProps dbMigratorProps;
         public MigrationScriptExecutor migrationScriptExecutor;
          
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "Allowing for code driven migrations")]
         public EFCoreAutoMigrator(DbContext _dbContext, ILogger _logger)
         {
             dbMigratorProps = new DBMigratorProps(){
@@ -110,6 +111,7 @@ namespace CentridNet.EFCoreAutoMigrator
             return migrationScriptExecutor;
         }
         
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "Allowing for code driven migrations")]
         private bool SetMigrationCommands(Assembly migrationAssembly, IModel oldModel, IModel newModel)
         {
             bool hasMigrations = false;
