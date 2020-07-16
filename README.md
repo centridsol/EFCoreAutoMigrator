@@ -2,11 +2,10 @@
 #### Code driven auto-migrations for Entity Framework Core
 
 If you are using Entity Framework Core (EFCore) and want to auto-migrate your database you might know that this is a bit challenging (as noted in this thread https://github.com/dotnet/efcore/issues/6214).
-This library builds upon suggested comments from the above thread as to how to implement this. A huge thanks to Jeremy Lakeman's [code snippets](https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630) that became the starting of point of this libray. 
-
+This library builds upon suggested comments from the above thread as to how to implement this. 
 **Notes:**
 
-* This library was created as part of a bigger project to meet our particular need. Extensive testing and optimization and has not been done on this library as this will take place in another phase of the bigger project. Please use in production enviroments with caution.  
+* This library was created as part of a bigger project to meet our particular need. Extensive testing and optimization has not been done on it. Please use it with caution.  
 * This libray does not run manually created migration scripts for you (created via `dotnet ef migrations add ...`). For those you will still need to run `dotnet ef database update`. You can then switch over to migrating through EFCoreAutoMigrator once you run those migrations.
 
 
@@ -154,7 +153,7 @@ Usage example:
 
 ### SetMigrationTableMetadataClass
 
-This method takes in a class the implements the `IAutoMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and add a comment to the top of the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used, if not set. 
+This method takes in a class that implements the `IAutoMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and add a comment to the top of the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used, if not set. 
 
 Usage example: 
 ```c#
@@ -177,7 +176,7 @@ Usage example:
 
 ### SetMigrationProviderFactory
 
-EFCoreAutoMigrator selects the appropiate migration provider (see below) for your connected database using the MigrationProviderFactory. If you want to replace this, use this method to pass in a class that implements the `IMigrationProviderFactory` interface. This is useful if you know exactly what database you will be using and want to remove the overhead of having to figure it out the database when migrating. 
+EFCoreAutoMigrator selects the appropiate migration provider (see below) for your connected database using the MigrationProviderFactory. If you want to replace this, use this method to pass in a class that implements the `IMigrationProviderFactory` interface. This is useful if you know exactly what database you will be using and want to remove the overhead associated with figuring out the database when migrating. 
 
 Usage example: 
 ```c#
@@ -200,7 +199,7 @@ Usage example:
 
 In the EFCoreAutoMigrator library, MigrationProviders are responsible for creating and interacting with the auto-migration tables for the various databases. EFCoreAutoMigrator comes with providers for Postgres, MSSQL, MySQL, and SQLLite baked in. 
 
-If you want to create your own provider class (i.e for a particular database) you can do this by creating a class the inherits the `MigrationProvider` class. An example of this is below (For method code examples, look at the MigrationProviders already written. See [src/MigrationProviders](src/MigrationProviders)):
+If you want to create your own provider class (i.e for a particular database) you can do this by creating a class that inherits the `MigrationProvider` class. An example of this is below (For method code examples, look at the MigrationProviders already written. See [src/MigrationProviders/Providers](src/MigrationProviders/Providers)):
 
 ```c#
 class MSSQLMigrations : MigrationsProvider
@@ -218,7 +217,7 @@ class MSSQLMigrations : MigrationsProvider
     }
 ```
 
-Once you have created a MigrationProvider you will need to let EFCoreAutoMigrator know it exists. You can either do this by creating your own MigrationProviderFactory (as described above)) or write a `DBContext` extension method with the format `[ProviderName]DBMigrations` for the method name. Using the example above this will be:
+Once you have created a MigrationProvider you will need to let EFCoreAutoMigrator know it exists. You can either do this by creating your own MigrationProviderFactory (as described above) or write a `DBContext` extension method with the format `[ProviderName]DBMigrations` for the method name. Using the example above this will be:
 
 ```c#
 public static MigrationsProvider CosmoDBDBMigrations(this DbContext dbContext, DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor){   
@@ -228,7 +227,7 @@ public static MigrationsProvider CosmoDBDBMigrations(this DbContext dbContext, D
 
 ## Known Issues
 
-There is currently a migration issue that occurs when you change the namespace(s) associated with your DBSets (Error messasge `Failed to compile previous snapshot`). Will look into this and should provide a fix soon.
+* There is currently a migration issue that occurs when you change the namespace(s) associated with your DBSets (Error messasge `Failed to compile previous snapshot`). Will look into this and should provide a fix soon.
 
 ----
 
@@ -248,5 +247,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Thanks
 
-Thanks to all those that have been contributing to the dicussion on this (see [(https://github.com/dotnet/efcore/issues/6214)](https://github.com/dotnet/efcore/issues/6214)) Jeremy Lakeman's [code snippets](https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630) that became the starting of point of this libray.
+Thanks to all those that have been contributing to the dicussion on this (see [(https://github.com/dotnet/efcore/issues/6214)](https://github.com/dotnet/efcore/issues/6214)) and in particular, a huge thanks Jeremy Lakeman's [code snippets](https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630) that became the starting of point of this libray.
 
