@@ -123,17 +123,15 @@ Below is a more complex example that allows for a more user driven/conditional m
 ```
 
 **A note of MigrateDB():**
-
-The example above                                               
-
-EFCoreAutoMigrator migrated your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to you database, and you can still get the script it was trying to run. 
+                                          
+EFCoreAutoMigrator migrates your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to your database, and you can still get the script it was trying to run. 
 
 
 ## EFCoreAutoMigrator Configuration
 
 ### ShouldAllowDestructive
 
-This is used to state whether desctructive migrations are allowed or not. If not, and exception will occur when you run the `PrepareMigration()` command. Default is false.
+This is used to state whether desctructive migrations are allowed or not. If not, and exception will occur when you run the `PrepareMigration()` method. Default is false.
 
 Usage example: 
 ```c#
@@ -144,7 +142,7 @@ Usage example:
 ```
 ### SetSnapshotHistoryLimit
 
-For every migration EFCoreAutoMigrator it saves a snapshot (and other corresponding metadata...See _SetMigrationTableMetadataClass_ below). Use this method to limt the number of snapshot saved. Default is unlimited 
+For every migration EFCoreAutoMigrator runs it saves a snapshot (and other corresponding metadata...See _SetMigrationTableMetadataClass_ below). Use this method to limt the number of snapshot saved. Default is unlimited 
 
 Usage example: 
 ```c#
@@ -156,11 +154,11 @@ Usage example:
 
 ### SetMigrationTableMetadataClass
 
-This method takes in a class the implements the `IAutoMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and top line comments on the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used if not set. 
+This method takes in a class the implements the `IAutoMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and add a comment to the top of the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used, if not set. 
 
 Usage example: 
 ```c#
-    private class MyMigrationMetadata : IAutoMigratorTableMetatdata {
+        class MyMigrationMetadata : IAutoMigratorTableMetatdata {
             public string GetDBMetadata()
             {
                 return "MyAppVersion: 1.0.0";
@@ -179,16 +177,17 @@ Usage example:
 
 ### SetMigrationProviderFactory
 
-EFCoreAutoMigrator selects the appropiate migration provider (see below) for your connect database using the MigrationProviderFactory. Although we already handle, and other providers can be added (see below) there might be times you replace the factory. For instance if you know your are only going to use one database, and want to remove the overhead of searching for the appropiate provider. Use this method to pass in a class that implements the `IMigrationProviderFactory` interface.
+EFCoreAutoMigrator selects the appropiate migration provider (see below) for your connected database using the MigrationProviderFactory. If you want to replace this, use this method to pass in a class that implements the `IMigrationProviderFactory` interface. This is useful if you know exactly what database you will be using and want to remove the overhead of having to figure it out the database when migrating. 
 
 Usage example: 
 ```c#
-   public class MyMigrationProviderFactory : IMigrationProviderFactory{
+    public class MyMigrationProviderFactory : IMigrationProviderFactory{
         public MigrationsProvider Build(DBMigratorProps dBMigratorProps, MigrationScriptExecutor migrationScriptExecutor){
 
-            if (dBMigratorProps.dbContext.IsNpgsql()){
-                return PostgresMigrations(dBMigratorProps, migrationScriptExecutor);
+            if (dBMigratorProps.dbContext.Database.IsNpgsql()){
+                return new PostgresMigrations(dBMigratorProps, migrationScriptExecutor);
             }
+            return null;
         }        
     }
     ...
@@ -199,9 +198,9 @@ Usage example:
 
 ## Migration Providers
 
-In the EFCoreAutoMigrator library, MigrationProviders are what are reasonable for creating appropiate auto-migration tables for the various databases. EFCoreAutoMigrator comes with providers for Postgres, MSSQL, MySQL, and SQLLite baked in. 
+In the EFCoreAutoMigrator library, MigrationProviders are responsible for creating and interacting with the auto-migration tables for the various databases. EFCoreAutoMigrator comes with providers for Postgres, MSSQL, MySQL, and SQLLite baked in. 
 
-If you want to create your own provider class (i.e for a particular database) you can by implememting a class the inherits the `MigrationProvider` class. An example of this is below (For code examples, look atthe MigrationProviders already written. See src/MigrationProviders):
+If you want to create your own provider class (i.e for a particular database) you can do this by creating a class the inherits the `MigrationProvider` class. An example of this is below (For method code examples, look at the MigrationProviders already written. See [src/MigrationProviders](src/MigrationProviders)):
 
 ```c#
 class MSSQLMigrations : MigrationsProvider
@@ -219,7 +218,7 @@ class MSSQLMigrations : MigrationsProvider
     }
 ```
 
-Once you have created a MigrationProvider you will need to let EFCoreAutoMigrator know it exists. You can either do this by creating your own MigrationProviderFactory which implements `IMigrationProviderFactory` or write a `DBContext` extension method with the format `[ProviderName]DBMigrations` for the method name. Using the example above this will be 
+Once you have created a MigrationProvider you will need to let EFCoreAutoMigrator know it exists. You can either do this by creating your own MigrationProviderFactory (as described above)) or write a `DBContext` extension method with the format `[ProviderName]DBMigrations` for the method name. Using the example above this will be:
 
 ```c#
 public static MigrationsProvider CosmoDBDBMigrations(this DbContext dbContext, DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor){   
@@ -227,13 +226,15 @@ public static MigrationsProvider CosmoDBDBMigrations(this DbContext dbContext, D
         }
 ```
 
+## Known Issues
 
+There is currently a migration issue that occurs when you change the namespace(s) associated with your DBSets (Error messasge `Failed to compile previous snapshot`). Will look into this and should provide a fix soon.
 
 ----
 
 ## Contributing
 
-EFCoreAutoMigrator is an opensource project and contributions are valued. If there is a bug fix please create a pull request explain what the bug is, and how you fixed and tested it.
+EFCoreAutoMigrator is an opensource project and contributions are valued. If there is a bug fix please create a pull request explain what the bug is, how you fixed and tested it.
 
 If it's a new feature, please add it as a issue with the label enhancement, detailing the new feature and why you think it's needed. Will discuss it there and once it's agreed upon you can create a pull request with the details highlighted above. 
 
@@ -247,9 +248,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Thanks
 
-Thanks to all those that have been contributing to the dicussion on this (see ___) and in particular [lakem] contirbution of which most of the main code is based.
-
-
-
-
+Thanks to all those that have been contributing to the dicussion on this (see [(https://github.com/dotnet/efcore/issues/6214)](https://github.com/dotnet/efcore/issues/6214)) Jeremy Lakeman's [code snippets](https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630) that became the starting of point of this libray.
 
