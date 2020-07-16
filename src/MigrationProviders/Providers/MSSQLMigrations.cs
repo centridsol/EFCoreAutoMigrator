@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
-    class MSSQLMigrations : MigrationsProvider
+    public class MSSQLMigrations : MigrationsProvider
     {
         public MSSQLMigrations(DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor) : base(dbMigratorProps, migrationScriptExecutor){}
 

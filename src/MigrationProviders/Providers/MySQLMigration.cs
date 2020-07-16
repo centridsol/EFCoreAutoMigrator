@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
-    class MySQLMigrations : MigrationsProvider
+    public class MySQLMigrations : MigrationsProvider
     {
         public MySQLMigrations(DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor) : base(dbMigratorProps, migrationScriptExecutor){}
         protected override void EnsureMigrateTablesExist()
