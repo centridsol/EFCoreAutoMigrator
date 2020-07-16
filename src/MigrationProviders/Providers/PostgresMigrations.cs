@@ -69,7 +69,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
                                                     ) 
                                                     VALUES
                                                     (NOW(),
-                                                    '{migrationMetadata.efcoreVersion}',
+                                                    '{typeof(DbContext).Assembly.GetName().Version.ToString()}',
                                                     '{migrationMetadata.metadata}',
                                                      decode('{BitConverter.ToString(snapshotData).Replace("-", "")}', 'hex'));");
 
