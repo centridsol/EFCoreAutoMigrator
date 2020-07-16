@@ -11,24 +11,15 @@ namespace EFCoreAutoMigratorExample{
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            throw new NotImplementedException();
-        }
-        public void LogError(string message){
-             Console.WriteLine($"Error: {message}");
-        }
-        public void LogInformation(string message){
-            Console.WriteLine($"Info: {message}");
-        }
-        public void LogTrace(string message){
-            Console.WriteLine($"Trace: {message}");
-        }
-        public void LogWarning(string message){
-            Console.WriteLine($"Warning: {message}");
+            return true;
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            return;
+            if ( (int)logLevel > 1)
+            {
+                Console.WriteLine($" {formatter(state, exception)}");
+            }
         }
     }
 }

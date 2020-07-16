@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Internal;
 using CentridNet.EFCoreAutoMigrator.MigrationContexts;
+using CentridNet.EFCoreAutoMigrator.Utilities;
 
 //Base on code from lakeman. See https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630/ for reference.
 namespace CentridNet.EFCoreAutoMigrator
@@ -97,7 +98,13 @@ namespace CentridNet.EFCoreAutoMigrator
                 if (source == null || !source.Contains(dbMigratorRunMigrations))
                     throw new InvalidOperationException($"Expected to find the source code of the {dbMigratorRunMigrations} ModelSnapshot stored in the database");
 
-                modelSnapshot = Utilities.Utilities.CompileSnapshot(migrationAssembly.Assembly, dbMigratorProps.dbContext, source);
+                try{
+                    modelSnapshot = Utilities.Utilities.CompileSnapshot(migrationAssembly.Assembly, dbMigratorProps.dbContext, source);
+                }
+                catch(Exception){
+                    dbMigratorProps.logger.LogError($"Failed to compile previous snapshot. This usually occurs when you have changed the namespace(s) associates with your DBSets. To fix you will have to delete the table causing the problem in your database (see below).");
+                }
+                
             }
             else
             {

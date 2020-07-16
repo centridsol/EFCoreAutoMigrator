@@ -21,48 +21,110 @@ You can either clone this project and add it to your project directly or install
 
 Once you have installed the package you can intergrate it by passing in your DbContext to the `EFCoreAutoMigrator` class (along with a logger). From there you can call `PrepareMigration()` which returns an instance of `MigrationScriptExecutor`. This instance is what you use to get the migration script to be executed (using `GetMigrationScript()`) and to execute it when ready (using `MigrateDB()`).
 
-Below is an example of this based on the EFCore getting started tutorial found at https://docs.microsoft.com/en-us/ef/core/get-started
+Below is a simple example of this based on the EFCore getting started tutorial found at https://docs.microsoft.com/en-us/ef/core/get-started
 
 ```c#
-        using System;
-        using System.Threading.Tasks;
-        using Microsoft.EntityFrameworkCore;
-        using CentridNet.EFCoreAutoMigrator;
+    using System;
+    using System.IO;
+    using System.Threading.Tasks;
+    using CentridNet.EFCoreAutoMigrator;
+    using Microsoft.EntityFrameworkCore;
 
-        static void Main()
+    namespace EFCoreAutoMigratorExample
+    {
+        class Program
         {
-            using (var db = new BloggingContext())
+            static void Main()
             {
-               ManageDbMigrations(db).Wait();  
+                using (var db = new BloggingContext())
+                {
+                    AutoMigrateMyDB(db).Wait();  
+                }
+            }
+
+            public static async Task AutoMigrateMyDB(DbContext db){
+                EFCoreAutoMigrator dbMigrator = new EFCoreAutoMigrator(db, new Logger());
+                MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
+                await migrationScriptExcutor.MigrateDB();
+                Console.WriteLine("Migration Complete");
             }
         }
+    }
+```
 
-        public static async Task ManageDbMigrations(DbContext db){
-            EFCoreAutoMigrator dbMigrator = new EFCoreAutoMigrator(db, new Logger());
-            MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
+Below is a more complex example that allows for a more user driven/conditional migration.
+ 
+```c#
+    using System;
+    using System.IO;
+    using System.Threading.Tasks;
+    using CentridNet.EFCoreAutoMigrator;
+    using Microsoft.EntityFrameworkCore;
 
-            if (migrationScriptExcutor.HasMigrations()){
-                Console.WriteLine("The program `Example` wants to run the following script on your database: ")
-                Console.WriteLine("------")
-                Console.WriteLine(migrationScriptExcutor.GetMigrationScript());
-                Console.WriteLine("------")
-                Console.WriteLine("Do you want (R)un it, (S)ave the script or (C)ancel. ?")
+    namespace EFCoreAutoMigratorExample
+    {
+        class Program
+        {
+            static void Main()
+            {
+                using (var db = new BloggingContext())
+                {
+                    AutoMigrateMyDB(db).Wait();  
+                }
+            }
 
-            }
-            MigrationResult result = await dbMigrator.MigrateDB();
-            if (result == MigrationResult.Migrated){
-                Console.WriteLine("Completed succesfully.")
-            }
-            else if (result == MigrationResult.Noop){
-                Console.WriteLine("Completed. These was nothing to migrate.")
-            }
-            else if (result == MigrationResult.ErrorMigrating){
-                Console.WriteLine("Error occured whilst migrating.")
+            public static async Task AutoMigrateMyDB(DbContext db){
+                EFCoreAutoMigrator dbMigrator = new EFCoreAutoMigrator(db, new Logger());
+                MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
+
+                // Checking if there are migrations
+                if (migrationScriptExcutor.HasMigrations()){
+                    Console.WriteLine("The program `Example` wants to run the following script on your database: ");
+                    Console.WriteLine("------");
+
+                    // Printing out the script to be run if they are
+                    Console.WriteLine(migrationScriptExcutor.GetMigrationScript());
+                    Console.WriteLine("------");
+
+                    Console.WriteLine("Do you want (R)un it, (S)ave the script or (C)ancel. ?");
+                    string userInput = Console.ReadLine();
+                    if (userInput.Length == 0){
+                        Console.WriteLine("No value entered. Exiting...");
+                        Environment.Exit(0);
+                    }
+                    if (userInput[0] == 'R'){
+                        // Migrating
+                        MigrationResult result = await migrationScriptExcutor.MigrateDB();
+                        if (result == MigrationResult.Migrated){
+                            Console.WriteLine("Completed succesfully.");
+                        }
+                        else if (result == MigrationResult.Noop){
+                            Console.WriteLine("Completed. There was nothing to migrate.");
+                        }
+                        else if (result == MigrationResult.ErrorMigrating){
+                            Console.WriteLine("Error occurred whilst migrating. No changes were made to the database");
+                        }
+                    }
+                    else if (userInput[0] == 'S'){
+                        using (StreamWriter writer = new StreamWriter(Path.Join(Environment.CurrentDirectory,"ERCoreAutoMigratorGenetaedScript.sql"))) 
+                        {  
+                            writer.WriteLine(migrationScriptExcutor.GetMigrationScript());
+                            Console.WriteLine("Migration script saved succefully.");
+                        } 
+                    }
+                }
+                else{
+                    Console.WriteLine("Completed. There was nothing to migrate.");
+                }
+                
             }
         }
+    }
 ```
 
 **A note of MigrateDB():**
+
+The example above                                               
 
 EFCoreAutoMigrator migrated your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to you database, and you can still get the script it was trying to run. 
 
