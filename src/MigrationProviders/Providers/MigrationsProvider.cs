@@ -9,7 +9,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
     public abstract class MigrationsProvider {
         protected DbContext dbContext;
-        protected DBMigratorTable migrationMetadata;
+        protected AutoMigratorTable migrationMetadata;
         protected IServiceProvider dbServices;
         protected string migrationName;
         protected dynamic migrationScriptExecutor;
@@ -24,7 +24,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
             snapshotHistoryLimit = dbMigratorProps.snapshotHistoryLimit;
             migrationScriptExecutor = _migrationScriptExecutor;
             dbMigrateDependencies = dbServices.GetRequiredService<MigrationsScaffolderDependencies>(); 
-            migrationMetadata = new DBMigratorTable(dbMigratorProps.dbMigratorTableMetatdata);
+            migrationMetadata = new AutoMigratorTable(dbMigratorProps.dbMigratorTableMetatdata);
         }
         protected void CreateEFHistoryTable(){
             if (!dbMigrateDependencies.HistoryRepository.Exists()){
@@ -44,7 +44,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
         protected abstract void EnsureMigrateTablesExist();
         protected abstract void EnsureSnapshotLimitNotReached();
         protected abstract void  UpdateMigrationTables(byte [] snapshotData);
-        protected abstract DBMigratorTable GetLastMigrationRecord();
+        protected abstract AutoMigratorTable GetLastMigrationRecord();
 
         public  void _EnsureMigrateTablesExist(){
             CreateEFHistoryTable();
@@ -57,7 +57,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
             UpdateMigrationTables(snapshotData);
             AddEFHistoryRecord(); 
         }
-        public  DBMigratorTable _GetLastMigrationRecord(){
+        public  AutoMigratorTable _GetLastMigrationRecord(){
             return GetLastMigrationRecord();
         }
         

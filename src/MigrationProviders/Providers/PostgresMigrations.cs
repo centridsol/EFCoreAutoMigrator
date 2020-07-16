@@ -6,8 +6,6 @@ using System.Linq;
 using CentridNet.EFCoreAutoMigrator.Utilities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using NpgsqlTypes;
 using Microsoft.Extensions.Logging;
 
 namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
@@ -42,10 +40,10 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
             }  
         }
 
-        protected override DBMigratorTable GetLastMigrationRecord()
+        protected override AutoMigratorTable GetLastMigrationRecord()
         {
-            IList<DBMigratorTable> migrationMetadata = dbContext.ExecuteSqlRawWithoutModel<DBMigratorTable>($"SELECT * FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC LIMIT 1;", (dbDataReader) => {
-                return new DBMigratorTable(){
+            IList<AutoMigratorTable> migrationMetadata = dbContext.ExecuteSqlRawWithoutModel<AutoMigratorTable>($"SELECT * FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC LIMIT 1;", (dbDataReader) => {
+                return new AutoMigratorTable(){
                     runId = (int)dbDataReader[0],
                     runDate = (DateTime)dbDataReader[1],
                     efcoreVersion = (string)dbDataReader[2],

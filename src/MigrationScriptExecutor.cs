@@ -109,7 +109,7 @@ namespace CentridNet.EFCoreAutoMigrator
             contextMigrator._EnsureMigrateTablesExist();
         }
 
-        public DBMigratorTable GetLastMigrationRecord()
+        public AutoMigratorTable GetLastMigrationRecord()
         {
             return contextMigrator._GetLastMigrationRecord();
         }

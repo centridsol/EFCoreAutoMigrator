@@ -10,7 +10,7 @@ namespace CentridNet.EFCoreAutoMigrator{
         Task<MigrationResult> MigrateDB();
         string GetMigrationScript();
         void EnsureMigrateTablesExist();
-        DBMigratorTable GetLastMigrationRecord();
+        AutoMigratorTable GetLastMigrationRecord();
         void UpdateMigrationTables(byte[] updatedSnapShot);
         
 

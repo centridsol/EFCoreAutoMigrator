@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace CentridNet.EFCoreAutoMigrator{
 
-    public class DBMigratorTable{
+    public class AutoMigratorTable{
 
         
         public int runId = -1;
@@ -14,11 +14,11 @@ namespace CentridNet.EFCoreAutoMigrator{
         public string metadata = "";
         public byte [] snapshot;
 
-        public DBMigratorTable(IDBMigratorTableMetatdata migratorTableMetatdata){
+        public AutoMigratorTable(IAutoMigratorTableMetatdata migratorTableMetatdata){
              metadata = migratorTableMetatdata.GetDBMetadata();
         }
 
-        public DBMigratorTable(){}
+        public AutoMigratorTable(){}
         
     }
 }

@@ -1,64 +1,27 @@
 # EFCoreAutoMigrator
 #### Code driven auto-migrations for Entity Framework Core
 
-If you are using Entty Framework Core (EFCore) and want to auto-migrate your database you might know that this is a bit challenging (as can be noted in this thread ___).
-This library builds upon work done by [lukema]() to provide for code driven auto-migrations. 
+If you are using Entity Framework Core (EFCore) and want to auto-migrate your database you might know that this is a bit challenging (as noted in this thread https://github.com/dotnet/efcore/issues/6214).
+This library builds upon suggested comments from the above thread as to how to implement this. A huge thanks to Jeremy Lakeman's [code snippets](https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630) that became the starting of point of this libray. 
 
 **Notes:**
 
-* This library was create for a specific purpose to meet our need and has not been extensively tested/optimized, hence use in a production enviroment with caution.  
-* This libray does not run manually created migration scripts for you (created via ). For those you will still need to run ___. 
+* This library was created as part of a bigger project to meet our particular need. Extensive testing and optimization and has not been done on this library as this will take place in another phase of the bigger project. Please use in production enviroments with caution.  
+* This libray does not run manually created migration scripts for you (created via `dotnet ef migrations add ...`). For those you will still need to run `dotnet ef database update`. You can then switch over to migrating through EFCoreAutoMigrator once you run those migrations.
 
 
 ## Getting Started
 
 ### 1. Installation
 
-You can either clone this project and add it to you project directly or install it via nuget
+You can either clone this project and add it to your project directly or install it via nuget (See https://www.nuget.org/packages/CentridNet.EFCoreAutoMigrator)
 
-`nuget `
 
 ### 2. Integrating 
 
-Once you have installed the package you can intergrate it by passing you DbContext to the `EFCoreAutoMigrator(db)` class (along with a logger). From there you can call `PrepareMigration()` which return and instance of `MigrationScriptExecutor`. This instance is what you use to execute the migration when ready. This is done by calling `MigrateDB()`.
+Once you have installed the package you can intergrate it by passing in your DbContext to the `EFCoreAutoMigrator` class (along with a logger). From there you can call `PrepareMigration()` which returns an instance of `MigrationScriptExecutor`. This instance is what you use to get the migration script to be executed (using `GetMigrationScript()`) and to execute it when ready (using `MigrateDB()`).
 
-Below is an example of this based on the EFCore getting started tutorial found at ___
-
-```c#
-        using System;
-        using System.Threading.Tasks;
-        using Microsoft.EntityFrameworkCore;
-        using CentridNet.EFCoreAutoMigrator;
-
-        static void Main()
-        {
-            using (var db = new BloggingContext())
-            {
-               ManageDbMigrations(db).Wait();  
-            }
-        }
-
-        public static async Task ManageDbMigrations(DbContext db){
-            EFCoreAutoMigrator dbMigrator = new EFCoreAutoMigrator(db, new Logger());
-            MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
-            MigrationResult result = await migrationScriptExcutor.MigrateDB();
-            if (result == MigrationResult.Migrated){
-                Console.WriteLine("Completed succesfully.")
-            }
-            else if (result == MigrationResult.Noop){
-                Console.WriteLine("Completed. These was nothing to migrate.")
-            }
-            else if (result == MigrationResult.ErrorMigrating){
-                Console.WriteLine("Error occured whilst migrating.")
-            }
-        }
-```
-
-**A note of MigrateDB():**
-
-EFCoreAutoMigrator migrated your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to you database, and you can still get the script it was trying to run. 
-
-Below is a more user driven migration workflow example:
+Below is an example of this based on the EFCore getting started tutorial found at https://docs.microsoft.com/en-us/ef/core/get-started
 
 ```c#
         using System;
@@ -79,11 +42,11 @@ Below is a more user driven migration workflow example:
             MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
 
             if (migrationScriptExcutor.HasMigrations()){
-                Console.WriteLine("The program `Example` want to run the following script on your database: ")
+                Console.WriteLine("The program `Example` wants to run the following script on your database: ")
                 Console.WriteLine("------")
                 Console.WriteLine(migrationScriptExcutor.GetMigrationScript());
                 Console.WriteLine("------")
-                Console.WriteLine("Do you want us to run it?")
+                Console.WriteLine("Do you want (R)un it, (S)ave the script or (C)ancel. ?")
 
             }
             MigrationResult result = await dbMigrator.MigrateDB();
@@ -98,6 +61,12 @@ Below is a more user driven migration workflow example:
             }
         }
 ```
+
+**A note of MigrateDB():**
+
+EFCoreAutoMigrator migrated your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to you database, and you can still get the script it was trying to run. 
+
+
 ## EFCoreAutoMigrator Configuration
 
 ### ShouldAllowDestructive
@@ -125,11 +94,11 @@ Usage example:
 
 ### SetMigrationTableMetadataClass
 
-This method takes in a class the implements the `IDBMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and top line comments on the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used if not set. 
+This method takes in a class the implements the `IAutoMigratorTableMetatdata` interface. This class is then used to set the metadata field in the auto-migration database table and top line comments on the generated sql script. This is useful if you want to track additional information, for instance, your application version associated with the migration. A default class is used if not set. 
 
 Usage example: 
 ```c#
-    private class MyMigrationMetadata : IDBMigratorTableMetatdata {
+    private class MyMigrationMetadata : IAutoMigratorTableMetatdata {
             public string GetDBMetadata()
             {
                 return "MyAppVersion: 1.0.0";
@@ -182,7 +151,7 @@ class MSSQLMigrations : MigrationsProvider
 
         protected override void EnsureSnapshotLimitNotReached(){...};
 
-        protected override DBMigratorTable GetLastMigrationRecord(){...};
+        protected override AutoMigratorTable GetLastMigrationRecord(){...};
 
         protected override void UpdateMigrationTables(byte[] snapshotData){...};
     }

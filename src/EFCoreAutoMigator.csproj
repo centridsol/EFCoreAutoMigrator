@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Deterministic>false</Deterministic>
+    <Deterministic>true</Deterministic>
 
-    <AssemblyVersion>1.0.*</AssemblyVersion>
+    <AssemblyVersion>3.1.1</AssemblyVersion>
 
     <AssemblyName>EFCoreAutoMigrator</AssemblyName>
 
@@ -17,11 +17,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.0" />
-
-
  </ItemGroup>
 
 </Project>

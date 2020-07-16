@@ -21,19 +21,17 @@ namespace CentridNet.EFCoreAutoMigrator.Utilities{
 
     class Utilities{
 
-        public static ModelSnapshot CompileSnapshot(Assembly migrationAssembly, Assembly dbContextAssembly, string source){
+        public static ModelSnapshot CompileSnapshot(Assembly migrationAssembly, DbContext dbContext, string source){            
             return Compile<ModelSnapshot>(source, new HashSet<Assembly>() {
-                AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name == "netstandard").Single(),
                 typeof(object).Assembly,
                 typeof(DbContext).Assembly,
                 migrationAssembly,
-                dbContextAssembly,
+                dbContext.GetType().Assembly,
                 typeof(DbContextAttribute).Assembly,
                 typeof(ModelSnapshot).Assembly,
                 typeof(SqlServerValueGenerationStrategy).Assembly,
-                typeof(AssemblyTargetedPatchBandAttribute).Assembly,
-                typeof(NpgsqlDatabaseFacadeExtensions).Assembly
-            });
+                typeof(AssemblyTargetedPatchBandAttribute).Assembly
+            }.Concat(AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name.Contains(dbContext.Database.ProviderName) || a.GetName().Name == "netstandard" )).ToHashSet());
         }
         
         private static T Compile<T>(string source, IEnumerable<Assembly> references) 

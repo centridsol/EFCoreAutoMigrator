@@ -1,5 +1,5 @@
 namespace CentridNet.EFCoreAutoMigrator{
-    public interface IDBMigratorTableMetatdata{
+    public interface IAutoMigratorTableMetatdata{
         string GetDBMetadata();
         string GetGeneratedScriptMetatdata();
     }

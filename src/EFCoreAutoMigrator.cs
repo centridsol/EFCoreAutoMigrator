@@ -18,12 +18,12 @@ using CentridNet.EFCoreAutoMigrator.MigrationContexts;
 //Base on code from lakeman. See https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630/ for reference.
 namespace CentridNet.EFCoreAutoMigrator
 {
-    public class DBMigrator : IOperationReporter
+    public class EFCoreAutoMigrator : IOperationReporter
     {
         private DBMigratorProps dbMigratorProps;
         public MigrationScriptExecutor migrationScriptExecutor;
          
-        public DBMigrator(DbContext _dbContext, ILogger _logger)
+        public EFCoreAutoMigrator(DbContext _dbContext, ILogger _logger)
         {
             dbMigratorProps = new DBMigratorProps(){
                 dbContext = _dbContext,
@@ -45,20 +45,20 @@ namespace CentridNet.EFCoreAutoMigrator
             
         }
 
-        public DBMigrator ShouldAllowDestructive(bool shouldAllowDestruction){
+        public EFCoreAutoMigrator ShouldAllowDestructive(bool shouldAllowDestruction){
             dbMigratorProps.allowDestructive = shouldAllowDestruction;
             return this;
         }
 
-        public DBMigrator SetSnapshotHistoryLimit(int limit){
+        public EFCoreAutoMigrator SetSnapshotHistoryLimit(int limit){
             dbMigratorProps.snapshotHistoryLimit = limit;
             return this;
         }
-        public DBMigrator SetMigrationTableMetadataClass(IDBMigratorTableMetatdata updateddbMigratorTableMetatdata){
+        public EFCoreAutoMigrator SetMigrationTableMetadataClass(IAutoMigratorTableMetatdata updateddbMigratorTableMetatdata){
             dbMigratorProps.dbMigratorTableMetatdata = updateddbMigratorTableMetatdata;
             return this;
         }
-        public DBMigrator SetMigrationProviderFactory(IMigrationProviderFactory updateddbMigratorProviderFactory){
+        public EFCoreAutoMigrator SetMigrationProviderFactory(IMigrationProviderFactory updateddbMigratorProviderFactory){
             dbMigratorProps.migrationProviderFactory = updateddbMigratorProviderFactory;
             return this;
         }
@@ -90,13 +90,13 @@ namespace CentridNet.EFCoreAutoMigrator
 
             if (dbMigratorRunMigrations != null)
             {
-                DBMigratorTable migrationRecord = migrationScriptExecutor.GetLastMigrationRecord();
+                AutoMigratorTable migrationRecord = migrationScriptExecutor.GetLastMigrationRecord();
                 var source = await Utilities.Utilities.DecompressSource(migrationRecord.snapshot);
 
                 if (source == null || !source.Contains(dbMigratorRunMigrations))
                     throw new InvalidOperationException($"Expected to find the source code of the {dbMigratorRunMigrations} ModelSnapshot stored in the database");
 
-                modelSnapshot = Utilities.Utilities.CompileSnapshot(migrationAssembly.Assembly, dbMigratorProps.dbContext.GetType().Assembly, source);
+                modelSnapshot = Utilities.Utilities.CompileSnapshot(migrationAssembly.Assembly, dbMigratorProps.dbContext, source);
             }
             else
             {
@@ -162,7 +162,7 @@ namespace CentridNet.EFCoreAutoMigrator
         void IOperationReporter.WriteVerbose(string message) => dbMigratorProps.logger.LogTrace(message);
         void IOperationReporter.WriteWarning(string message) => dbMigratorProps.logger.LogWarning(message);
 
-        private class DefaultMigrationMetadata : IDBMigratorTableMetatdata {
+        private class DefaultMigrationMetadata : IAutoMigratorTableMetatdata {
 
             private string name;
             private string version;
@@ -187,7 +187,7 @@ namespace CentridNet.EFCoreAutoMigrator
      public struct DBMigratorProps{
             public bool allowDestructive;
             public int snapshotHistoryLimit;
-            public IDBMigratorTableMetatdata dbMigratorTableMetatdata;
+            public IAutoMigratorTableMetatdata dbMigratorTableMetatdata;
             public IMigrationProviderFactory migrationProviderFactory;
             public DbContext dbContext; 
             public ILogger logger;

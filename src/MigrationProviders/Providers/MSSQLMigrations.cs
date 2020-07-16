@@ -18,7 +18,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
             throw new NotImplementedException();
         }
 
-        protected override DBMigratorTable GetLastMigrationRecord()
+        protected override AutoMigratorTable GetLastMigrationRecord()
         {
             throw new System.NotImplementedException();
         }

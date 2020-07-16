@@ -16,10 +16,29 @@ namespace EFCoreMigratorExample
         }
 
         public static async Task ManageDbMigrations(DbContext db){
-            DBMigrator dbMigrator = new DBMigrator(db, new Logger());
+            EFCoreAutoMigrator dbMigrator = new EFCoreAutoMigrator(db, new Logger());
             MigrationScriptExecutor migrationScriptExcutor = await dbMigrator.PrepareMigration();
-            Console.WriteLine(migrationScriptExcutor.GetMigrationScript());
+
+            if (migrationScriptExcutor.HasMigrations()){
+                Console.WriteLine("The program `Example` wants to run the following script on your database: ");
+                Console.WriteLine("------");
+                Console.WriteLine(migrationScriptExcutor.GetMigrationScript());
+                Console.WriteLine("------");
+                Console.WriteLine("Do you want (R)un it, (S)ave the script or (C)ancel. ?");
+
+            }
+            MigrationResult result = await migrationScriptExcutor.MigrateDB();
+            if (result == MigrationResult.Migrated){
+                Console.WriteLine("Completed succesfully.");
+            }
+            else if (result == MigrationResult.Noop){
+                Console.WriteLine("Completed. These was nothing to migrate.");
+            }
+            else if (result == MigrationResult.ErrorMigrating){
+                Console.WriteLine("Error occured whilst migrating.");
+            }
         }
 
     }
 }
+
