@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <PackageId>CentridNet.EFCoreAutoMigrator</PackageId>
+    <Version>3.1.3.2</Version>
+    <Description>Code driven auto-migrations for Entity Framework Core</Description>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/centridsol/EFCoreAutoMigrator</PackageProjectUrl>
+		<PackageTags>efcore;auto-migrations;migrations;database</PackageTags>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Deterministic>true</Deterministic>
-
-    <AssemblyVersion>3.1.3</AssemblyVersion>
-
+    <AssemblyVersion>3.1.3.2</AssemblyVersion>
     <AssemblyName>EFCoreAutoMigrator</AssemblyName>
-
+    <Authors>Chido W</Authors>
     <Company>Centrid Software Solutions</Company>
   </PropertyGroup>
   
@@ -19,5 +22,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
  </ItemGroup>
+
+ <ItemGroup>
+		<None Include="../LICENSE.md" Pack="true" PackagePath="$(PackageLicenseFile)" />
+	</ItemGroup>
 
 </Project>
