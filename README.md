@@ -101,7 +101,7 @@ Below is a more complex example that allows for a more user driven/conditional m
                             Console.WriteLine("Completed. There was nothing to migrate.");
                         }
                         else if (result == MigrationResult.ErrorMigrating){
-                            Console.WriteLine("Error occurred whilst migrating. No changes were made to the database");
+                            Console.WriteLine("Error occurred whilst migrating.");
                         }
                     }
                     else if (userInput[0] == 'S'){
