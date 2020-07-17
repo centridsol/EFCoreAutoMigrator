@@ -11,7 +11,7 @@ namespace EFCoreAutoMigratorExample
         public DbSet<Post> Posts { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseNpgsql("Host=localhost;Database=gas_capture;Username=test;Password=test");
+            => options.UseSqlite("Data Source=EfCoreAutoMigrator.db");
     }
 
     public class Blog
