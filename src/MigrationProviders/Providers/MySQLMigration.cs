@@ -21,7 +21,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
             if (resultDataTable.Rows.Count == 0 || !Convert.ToBoolean(resultDataTable.Rows[0][0])){
                 migrationScriptExecutor.AddSQLCommand($@"CREATE TABLE {DalConsts.MIGRATION_TABLE_NAME} (
-                    runId int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    runId INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                     runDate TIMESTAMP,
                     efcoreVersion VARCHAR (355) NOT NULL,
                     metadata TEXT,

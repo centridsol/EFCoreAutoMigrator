@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
+using CentridNet.EFCoreAutoMigrator.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,22 +13,57 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
         protected override void EnsureMigrateTablesExist()
         {
-            throw new System.NotImplementedException();
+            DataTable resultDataTable = dbContext.ExecuteSqlRawWithoutModel($"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES  WHERE TABLE_NAME = N'{DalConsts.MIGRATION_TABLE_NAME}';");
+
+            if (resultDataTable.Rows.Count == 0 || !Convert.ToBoolean(resultDataTable.Rows[0][0])){
+                migrationScriptExecutor.AddSQLCommand($@"CREATE TABLE {DalConsts.MIGRATION_TABLE_NAME} (
+                    runId INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+                    runDate TIMESTAMP,
+                    efcoreVersion VARCHAR (355) NOT NULL,
+                    metadata TEXT,
+                    snapshot VARBINARY(MAX) NOT NULL
+                );");
+            }
         }
 
         protected override void EnsureSnapshotLimitNotReached()
         {
-            throw new NotImplementedException();
+            if (snapshotHistoryLimit > 0){
+                migrationScriptExecutor.AddSQLCommand($"DELETE FROM {DalConsts.MIGRATION_TABLE_NAME} WHERE runId NOT IN (SELECT TOP {snapshotHistoryLimit-1} runId FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC);");
+            }  
         }
 
         protected override AutoMigratorTable GetLastMigrationRecord()
         {
-            throw new System.NotImplementedException();
+            IList<AutoMigratorTable> migrationMetadata = dbContext.ExecuteSqlRawWithoutModel<AutoMigratorTable>($"SELECT TOP 1 * FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC;", (dbDataReader) => {
+                return new AutoMigratorTable(){
+                    runId = (int)dbDataReader[0],
+                    runDate = (DateTime)dbDataReader[1],
+                    efcoreVersion = (string)dbDataReader[2],
+                    metadata = (string)dbDataReader[3],
+                    snapshot = (byte[])dbDataReader[4]
+                };
+            });
+
+            if (migrationMetadata.Count >0){
+                return migrationMetadata[0];
+            }
+            return null;
         }
 
         protected override void UpdateMigrationTables(byte[] snapshotData)
         {
-            throw new System.NotImplementedException();
+            migrationScriptExecutor.AddSQLCommand($@"INSERT INTO {DalConsts.MIGRATION_TABLE_NAME}  (
+                                        runDate,
+                                        efcoreVersion,
+                                        metadata,
+                                        snapshot
+                                        ) 
+                                        VALUES
+                                        (NOW(),
+                                        '{typeof(DbContext).Assembly.GetName().Version.ToString()}',
+                                        '{migrationMetadata.metadata}',
+                                        CAST('{BitConverter.ToString(snapshotData).Replace("-", "")}' AS VARBINARY);");
         }
     }
 }
