@@ -1,40 +1,38 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Linq;
 using CentridNet.EFCoreAutoMigrator.Utilities;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
-    public static class PostgresMigrationsExtensions{
-        public static MigrationsProvider PostgreSQLDBMigrations(this DbContext dbContext, DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor){   
-            return new PostgresMigrations(dbMigratorProps, migrationScriptExecutor);
+    public static class SqliteMigrationsExtensions{
+        public static MigrationsProvider SqliteDBMigrations(this DbContext dbContext, DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor){   
+            return new SQLiteMigrations(dbMigratorProps, migrationScriptExecutor);
         }
     }
-    public class PostgresMigrations : MigrationsProvider
+    public class SQLiteMigrations : MigrationsProvider
     {
-        public PostgresMigrations(DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor) : base(dbMigratorProps, migrationScriptExecutor){}
+        public SQLiteMigrations(DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor) : base(dbMigratorProps, migrationScriptExecutor){}
+
         protected override void EnsureMigrateTablesExist()
         {
+            DataTable resultDataTable = dbContext.ExecuteSqlRawWithoutModel($"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name= '{DalConsts.MIGRATION_TABLE_NAME}';");
 
-            DataTable resultDataTable = dbContext.ExecuteSqlRawWithoutModel($"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND  table_name = '{DalConsts.MIGRATION_TABLE_NAME}');");
-
-            if (resultDataTable.Rows.Count == 0 || !(bool)resultDataTable.Rows[0][0]){
+            if (resultDataTable.Rows.Count == 0 || !Convert.ToBoolean(resultDataTable.Rows[0][0])){
                 migrationScriptExecutor.AddSQLCommand($@"CREATE TABLE {DalConsts.MIGRATION_TABLE_NAME} (
-                    runId SERIAL PRIMARY KEY,
-                    runDate TIMESTAMP,
-                    efcoreVersion VARCHAR (355) NOT NULL,
+                    runId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    runDate TEXT NOT NULL,
+                    efcoreVersion TEXT NOT NULL,
                     metadata TEXT,
-                    snapshot BYTEA NOT NULL
+                    snapshot BLOB NOT NULL
                 );");
             }
         }
 
-        protected override void EnsureSnapshotLimitNotReached(){
+        protected override void EnsureSnapshotLimitNotReached()
+        {
             if (snapshotHistoryLimit > 0){
                 migrationScriptExecutor.AddSQLCommand($"DELETE FROM {DalConsts.MIGRATION_TABLE_NAME} WHERE runId NOT IN (SELECT runId FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC LIMIT {snapshotHistoryLimit-1});");
             }  
@@ -44,8 +42,8 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
         {
             IList<AutoMigratorTable> migrationMetadata = dbContext.ExecuteSqlRawWithoutModel<AutoMigratorTable>($"SELECT * FROM {DalConsts.MIGRATION_TABLE_NAME} ORDER BY runId DESC LIMIT 1;", (dbDataReader) => {
                 return new AutoMigratorTable(){
-                    runId = (int)dbDataReader[0],
-                    runDate = (DateTime)dbDataReader[1],
+                    runId = Convert.ToInt32(dbDataReader[0]),
+                    runDate = DateTime.Parse((string)dbDataReader[1]),
                     efcoreVersion = (string)dbDataReader[2],
                     metadata = (string)dbDataReader[3],
                     snapshot = (byte[])dbDataReader[4]
@@ -60,20 +58,17 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
 
         protected override void UpdateMigrationTables(byte[] snapshotData)
         {
-
-            migrationScriptExecutor.AddSQLCommand($@"INSERT INTO {DalConsts.MIGRATION_TABLE_NAME}  (
+             migrationScriptExecutor.AddSQLCommand($@"INSERT INTO {DalConsts.MIGRATION_TABLE_NAME}  (
                                                     runDate,
                                                     efcoreVersion,
                                                     metadata,
                                                     snapshot
                                                     ) 
                                                     VALUES
-                                                    (NOW(),
+                                                    (strftime('%Y-%m-%d %H:%M','now'),
                                                     '{typeof(DbContext).Assembly.GetName().Version.ToString()}',
                                                     '{migrationMetadata.metadata}',
-                                                     decode('{BitConverter.ToString(snapshotData).Replace("-", "")}', 'hex'));");
-
-            
+                                                    x'{BitConverter.ToString(snapshotData).Replace("-", "")}');");
         }
     }
-} 
+}
