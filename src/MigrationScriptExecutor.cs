@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace CentridNet.EFCoreAutoMigrator
 {
@@ -23,6 +24,7 @@ namespace CentridNet.EFCoreAutoMigrator
 
         private MigrationsProvider contextMigrator;
         DBMigratorProps dBMigratorProps;
+        private string migrationScript = null;
         private IList<MigrationSQLCommand> commandsList = new List<MigrationSQLCommand>();
         public MigrationResult executionResult = MigrationResult.Noop;
 
@@ -56,16 +58,10 @@ namespace CentridNet.EFCoreAutoMigrator
 
                 using (IDbContextTransaction transaction = dBMigratorProps.dbContext.Database.BeginTransaction()){
                     try{
-                        var builder = new StringBuilder();
-                        foreach (var command in commandsList)
-                        {
-                            if(command.commandType == MigrationSQLCommandType.command){
-                                builder.Append(command.sqlCommand)
-                                    .AppendLine();
-                            }
+                        if (migrationScript == null){
+                            migrationScript = GetMigrationScript();
                         }
-
-                        await dBMigratorProps.dbContext.Database.ExecuteSqlRawAsync(builder.ToString());
+                        await dBMigratorProps.dbContext.Database.ExecuteSqlRawAsync(migrationScript);
                         transaction.Commit();
                         return MigrationResult.Migrated;
                     }
@@ -84,8 +80,12 @@ namespace CentridNet.EFCoreAutoMigrator
 
         }
 
+        private string RemoveSQLServerGoCommand(string sqlcommand){
+            return String.Join("; ", Regex.Split(sqlcommand, ";.*\n*\t*\r*GO", RegexOptions.Multiline));
+        }
         public string GetMigrationScript()
         {
+            bool IsMSSSQL = dBMigratorProps.dbContext.Database.ProviderName.Contains("SqlServer");
             var builder = new StringBuilder();
             builder.Append($"/* {dBMigratorProps.dbMigratorTableMetatdata.GetGeneratedScriptMetatdata()} */").AppendLine();
             foreach (var command in commandsList)
@@ -94,14 +94,15 @@ namespace CentridNet.EFCoreAutoMigrator
                     builder.Append($"/* {command.sqlCommand} */").AppendLine();
                 }
                 else if(command.commandType == MigrationSQLCommandType.command){
-                    builder.Append(command.sqlCommand)
-                                        .AppendLine();
+                    builder.Append(IsMSSSQL ? RemoveSQLServerGoCommand(command.sqlCommand) : command.sqlCommand)
+                                    .AppendLine();
                 }
 
                 
             }
 
-            return builder.ToString();
+            migrationScript = builder.ToString();
+            return migrationScript;
         }
 
         public void EnsureMigrateTablesExist()

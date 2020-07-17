@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
-
+    public static class SqlServerMigrationsExtensions{
+        public static MigrationsProvider SqlServerDBMigrations(this DbContext dbContext, DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor){   
+            return new MSSQLMigrations(dbMigratorProps, migrationScriptExecutor);
+        }
+    }
     public class MSSQLMigrations : MigrationsProvider
     {
         public MSSQLMigrations(DBMigratorProps dbMigratorProps, MigrationScriptExecutor migrationScriptExecutor) : base(dbMigratorProps, migrationScriptExecutor){}
@@ -18,7 +22,7 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
             if (resultDataTable.Rows.Count == 0 || !Convert.ToBoolean(resultDataTable.Rows[0][0])){
                 migrationScriptExecutor.AddSQLCommand($@"CREATE TABLE {DalConsts.MIGRATION_TABLE_NAME} (
                     runId INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
-                    runDate TIMESTAMP,
+                    runDate DATETIME,
                     efcoreVersion VARCHAR (355) NOT NULL,
                     metadata TEXT,
                     snapshot VARBINARY(MAX) NOT NULL
@@ -60,10 +64,10 @@ namespace CentridNet.EFCoreAutoMigrator.MigrationContexts{
                                         snapshot
                                         ) 
                                         VALUES
-                                        (NOW(),
+                                        (getdate(),
                                         '{typeof(DbContext).Assembly.GetName().Version.ToString()}',
                                         '{migrationMetadata.metadata}',
-                                        CAST('{BitConverter.ToString(snapshotData).Replace("-", "")}' AS VARBINARY);");
+                                        {"0x"+BitConverter.ToString(snapshotData).Replace("-", "")});");
         }
     }
 }
