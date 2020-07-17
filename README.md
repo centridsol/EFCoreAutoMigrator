@@ -5,7 +5,7 @@ If you are using Entity Framework Core (EFCore) and want to auto-migrate your da
 This library builds upon suggested comments from the above thread as to how to implement this. 
 **Notes:**
 
-* This library was created as part of a bigger project to meet our particular need. Extensive testing and optimization has not been done on it. Please use it with caution.  
+* This library was created as part of a bigger project to meet our particular need. Extensive testing and optimization has not been done on it. Please use this library with caution.  
 * This libray does not run manually created migration scripts for you (created via `dotnet ef migrations add ...`). For those you will still need to run `dotnet ef database update`. You can then switch over to migrating through EFCoreAutoMigrator once you run those migrations.
 
 
@@ -120,11 +120,6 @@ Below is a more complex example that allows for a more user driven/conditional m
         }
     }
 ```
-
-**A note of MigrateDB():**
-                                          
-EFCoreAutoMigrator migrates your database by first generating a complete script that it will run when migrating you database (this is done when you call `PrepareMigration()`). This means we can run `MigrateDB()` as a transactional process, which we do. If this fails, no changes will be made to your database, and you can still get the script it was trying to run. 
-
 
 ## EFCoreAutoMigrator Configuration
 
