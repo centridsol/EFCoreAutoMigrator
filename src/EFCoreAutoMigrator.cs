@@ -101,8 +101,8 @@ namespace CentridNet.EFCoreAutoMigrator
                 try{
                     modelSnapshot = Utilities.Utilities.CompileSnapshot(migrationAssembly.Assembly, dbMigratorProps.dbContext, source);
                 }
-                catch(Exception){
-                    dbMigratorProps.logger.LogError($"Failed to compile previous snapshot. This usually occurs when you have changed the namespace(s) associates with your DBSets. To fix you will have to delete the table causing the problem in your database (see below).");
+                catch(Exception ex){
+                    throw new InvalidOperationException("Failed to compile previous snapshot. This usually occurs when you have changed the namespace(s) associates with your DBSets. To fix you will have to delete the table causing the problem in your database (see below).", ex);
                 }
                 
             }
