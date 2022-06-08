@@ -75,6 +75,7 @@ namespace CentridNet.EFCoreAutoMigrator
             var migrationAssembly = dbMigratorProps.dbContext.GetService<IMigrationsAssembly>();
             var designTimeModel = dbMigratorProps.dbContext.GetService<IDesignTimeModel>();
             var declaredMigrations = dbMigratorProps.dbContext.Database.GetMigrations().ToList();
+            var dependencies = dbMigratorProps.dbServices.GetRequiredService<MigrationsScaffolderDependencies>();
             var appliedMigrations = (await dbMigratorProps.dbContext.Database.GetAppliedMigrationsAsync()).ToList();
 
             if (declaredMigrations.Except(appliedMigrations).Any()){
@@ -121,6 +122,9 @@ namespace CentridNet.EFCoreAutoMigrator
             if (snapshotModel != null)
             {
                 snapshotModel = dbMigratorProps.dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
+
+                // apply fixes for upgrading between major / minor versions
+                snapshotModel = dependencies.SnapshotModelProcessor.Process(snapshotModel);
             }
 
             if (SetMigrationCommands(migrationAssembly.Assembly, snapshotModel?.GetRelationalModel(), designTimeModel.Model.GetRelationalModel())){
@@ -131,7 +135,7 @@ namespace CentridNet.EFCoreAutoMigrator
         }
         
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "Allowing for code driven migrations")]
-        private bool SetMigrationCommands(Assembly migrationAssembly, IRelationalModel oldModel, IRelationalModel newModel)
+        private bool SetMigrationCommands(Assembly migrationAssembly, IRelationalModel oldModel , IRelationalModel newModel)
         {
             bool hasMigrations = false;
             var dependencies = dbMigratorProps.dbServices.GetRequiredService<MigrationsScaffolderDependencies>();
@@ -143,8 +147,6 @@ namespace CentridNet.EFCoreAutoMigrator
             }
             else
             {
-                // apply fixes for upgrading between major / minor versions
-                //oldModel = dependencies.SnapshotModelProcessor.Process(oldModel);
 
                 var operations = dependencies.MigrationsModelDiffer
                     .GetDifferences(oldModel, newModel)
