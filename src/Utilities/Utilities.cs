@@ -30,7 +30,8 @@ namespace CentridNet.EFCoreAutoMigrator.Utilities{
                 typeof(DbContextAttribute).Assembly,
                 typeof(ModelSnapshot).Assembly,
                 typeof(SqlServerValueGenerationStrategy).Assembly,
-                typeof(AssemblyTargetedPatchBandAttribute).Assembly
+                typeof(AssemblyTargetedPatchBandAttribute).Assembly,
+                Assembly.Load("System.Runtime")
             }.Concat(AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name.Contains(dbContext.Database.ProviderName) || a.GetName().Name == "netstandard" )).ToHashSet());
         }
         

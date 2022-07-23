@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Design.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Migrations.Design;
+using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Internal;
 using CentridNet.EFCoreAutoMigrator.MigrationContexts;
 using CentridNet.EFCoreAutoMigrator.Utilities;
+using Microsoft.EntityFrameworkCore.Migrations.Design;
 
 //Base on code from lakeman. See https://gist.github.com/lakeman/1509f790ead00a884961865b5c79b630/ for reference.
 namespace CentridNet.EFCoreAutoMigrator
@@ -72,8 +73,9 @@ namespace CentridNet.EFCoreAutoMigrator
             migrationScriptExecutor = new MigrationScriptExecutor(dbMigratorProps);
             
             var migrationAssembly = dbMigratorProps.dbContext.GetService<IMigrationsAssembly>();
-
+            var designTimeModel = dbMigratorProps.dbContext.GetService<IDesignTimeModel>();
             var declaredMigrations = dbMigratorProps.dbContext.Database.GetMigrations().ToList();
+            var dependencies = dbMigratorProps.dbServices.GetRequiredService<MigrationsScaffolderDependencies>();
             var appliedMigrations = (await dbMigratorProps.dbContext.Database.GetAppliedMigrationsAsync()).ToList();
 
             if (declaredMigrations.Except(appliedMigrations).Any()){
@@ -111,7 +113,21 @@ namespace CentridNet.EFCoreAutoMigrator
                 modelSnapshot = migrationAssembly.ModelSnapshot;
             }
 
-            if (SetMigrationCommands(migrationAssembly.Assembly, modelSnapshot?.Model, dbMigratorProps.dbContext.Model)){
+            var snapshotModel = modelSnapshot?.Model;
+            if (snapshotModel is IMutableModel mutableModel)
+            {
+                snapshotModel = mutableModel.FinalizeModel();
+            }
+
+            if (snapshotModel != null)
+            {
+                snapshotModel = dbMigratorProps.dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
+
+                // apply fixes for upgrading between major / minor versions
+                snapshotModel = dependencies.SnapshotModelProcessor.Process(snapshotModel);
+            }
+
+            if (SetMigrationCommands(migrationAssembly.Assembly, snapshotModel?.GetRelationalModel(), designTimeModel.Model.GetRelationalModel())){
                 await UpdateMigrationTables();
             }   
                 
@@ -119,7 +135,7 @@ namespace CentridNet.EFCoreAutoMigrator
         }
         
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "Allowing for code driven migrations")]
-        private bool SetMigrationCommands(Assembly migrationAssembly, IModel oldModel, IModel newModel)
+        private bool SetMigrationCommands(Assembly migrationAssembly, IRelationalModel oldModel , IRelationalModel newModel)
         {
             bool hasMigrations = false;
             var dependencies = dbMigratorProps.dbServices.GetRequiredService<MigrationsScaffolderDependencies>();
@@ -131,13 +147,11 @@ namespace CentridNet.EFCoreAutoMigrator
             }
             else
             {
-                // apply fixes for upgrading between major / minor versions
-                oldModel = dependencies.SnapshotModelProcessor.Process(oldModel);
 
                 var operations = dependencies.MigrationsModelDiffer
                     .GetDifferences(oldModel, newModel)
                     // Ignore all seed updates. Workaround for (https://github.com/aspnet/EntityFrameworkCore/issues/18943)
-                    .Where(o => !(o is UpdateDataOperation)) 
+                    .Where(o => !(o is UpdateDataOperation))
                     .ToList();
 
                 if (operations.Any())
@@ -149,10 +163,11 @@ namespace CentridNet.EFCoreAutoMigrator
                     var sqlGenerator = dbMigratorProps.dbContext.GetService<IMigrationsSqlGenerator>();
                     var commands = sqlGenerator.Generate(operations, dbMigratorProps.dbContext.Model);
 
-                    foreach(MigrationCommand migrateCommand in commands){
+                    foreach (MigrationCommand migrateCommand in commands)
+                    {
                         migrationScriptExecutor.AddSQLCommand(migrateCommand.CommandText);
                     }
-                    
+
                     hasMigrations = true;
                 }
             } 
@@ -161,7 +176,9 @@ namespace CentridNet.EFCoreAutoMigrator
 
         private async Task UpdateMigrationTables(){
             var codeGen = dbMigratorProps.dbServices.GetRequiredService<MigrationsScaffolderDependencies>().MigrationsCodeGeneratorSelector.Select(null);
-            string modelSource =  codeGen.GenerateSnapshot("AutoMigrations", dbMigratorProps.dbContext.GetType(), $"Migration_{dbMigratorProps.migrationName}", dbMigratorProps.dbContext.Model);
+            var designTimeModel = dbMigratorProps.dbContext.GetService<IDesignTimeModel>();
+            string modelSource =  codeGen.GenerateSnapshot("AutoMigrations", dbMigratorProps.dbContext.GetType(), $"Migration_{dbMigratorProps.migrationName}",
+                                designTimeModel.Model);
             byte[] newSnapshotBinary = await Utilities.Utilities.CompressSource(modelSource);
             migrationScriptExecutor.UpdateMigrationTables(newSnapshotBinary);   
         }
