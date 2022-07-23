@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <PackageId>CentridNet.EFCoreAutoMigrator</PackageId>
-    <Version>4.0.0.0</Version>
+    <Version>6.0.0.1</Version>
     <Description>Code driven auto-migrations for Entity Framework Core</Description>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/centridsol/EFCoreAutoMigrator</PackageProjectUrl>
 		<PackageTags>efcore;auto-migrations;migrations;database</PackageTags>
     <TargetFramework>net6.0</TargetFramework>
-    <AssemblyVersion>4.0.0.0</AssemblyVersion>
+    <AssemblyVersion>6.0.0.1</AssemblyVersion>
     <AssemblyName>EFCoreAutoMigrator</AssemblyName>
     <Authors>Chido W</Authors>
     <Company>Centrid Software Solutions</Company>

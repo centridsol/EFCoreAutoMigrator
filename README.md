@@ -232,6 +232,12 @@ EFCoreAutoMigrator is an opensource project and contributions are valued. If the
 
 If it's a new feature, please add it as a issue with the label enhancement, detailing the new feature and why you think it's needed. Will discuss it there and once it's agreed upon you can create a pull request with the details highlighted above. 
 
+## Credit
+
+Thank you to our following contributors
+
+@stavroskasidis - worked on the .net 6.0 version
+
 ## Authors
 
 * **Chido Warambwa** - *Initial Work* - [chidow@centridsol.tech](mailto://chidow@centridsol.tech) 
